@@ -5,7 +5,7 @@ import ts from 'typescript';
 const js=ts.transpileModule(readFileSync(new URL('../src/accounting.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const module={exports:{}};
 new Function('module','exports',js)(module,module.exports);
-const {pendingRecurringAmount,monthlyAmounts,reconcileMonthlyRows}=module.exports;
+const {pendingRecurringAmount,monthlyAmounts,reconcileMonthlyRows,reconcileWalletBalances}=module.exports;
 const wallets=new Set(['wallet-a']);
 const recurring=[{id:'salary',wallet_id:'wallet-a',kind:'income',amount:2000,next_due_on:'2026-11-10'},{id:'rent',wallet_id:'wallet-a',kind:'expense',amount:700,next_due_on:'2026-11-05'},{id:'other',wallet_id:'wallet-b',kind:'income',amount:900,next_due_on:'2026-11-10'}];
 const rows=[{wallet_id:'wallet-a',month:'2026-11',income:300,expense:50}];
@@ -29,4 +29,13 @@ test('reconciliation isolates wallets and does not subtract current-day movement
  const data=[{wallet_id:'wallet-a',month:'2026-11',income:400,expense:100},{wallet_id:'wallet-b',month:'2026-11',income:900,expense:0}];
  const entries=[{wallet_id:'wallet-a',occurred_on:'2026-11-01',kind:'income',amount:100},{wallet_id:'wallet-a',occurred_on:'2026-11-03',kind:'income',amount:300},{wallet_id:'wallet-b',occurred_on:'2026-11-03',kind:'income',amount:900}];
  assert.deepEqual(reconcileMonthlyRows(data,entries,'2026-11-01',false,wallets),[{wallet_id:'wallet-a',month:'2026-11',income:100,expense:100}]);
+});
+
+test('posted and booked wallet balances reconcile across two wallets',()=>{
+ const result=reconcileWalletBalances([{id:'a',opening_balance:1000},{id:'b',opening_balance:200}],[{wallet_id:'a',net_movements:150},{wallet_id:'b',net_movements:-80}],[{wallet_id:'a',future_net:300},{wallet_id:'b',future_net:-50}]);
+ assert.deepEqual(result,[{wallet_id:'a',posted:850,booked:1150},{wallet_id:'b',posted:170,booked:120}]);
+ assert.equal(result.reduce((s,x)=>s+x.posted,0),1020);
+});
+test('wallet balances default to opening amounts without movements',()=>{
+ assert.deepEqual(reconcileWalletBalances([{id:'empty',opening_balance:55}],[],[]),[{wallet_id:'empty',posted:55,booked:55}]);
 });
