@@ -9,3 +9,20 @@ export function monthlyAmounts(rows:{wallet_id:string;month:string;income:number
  const recurringEnabled=includeFuture&&month===today.slice(0,7);
  return {income:current.reduce((s,r)=>s+Number(r.income),0)+pendingRecurringAmount(recurring,movements,month,'income',walletIds,recurringEnabled),expense:current.reduce((s,r)=>s+Number(r.expense),0)+pendingRecurringAmount(recurring,movements,month,'expense',walletIds,recurringEnabled)};
 }
+
+export type MonthlyRow={wallet_id:string;month:string;income:number;expense:number};
+export type DatedMovement={wallet_id:string;occurred_on:string;kind:'income'|'expense';amount:number;transfer_id?:string|null};
+export function reconcileMonthlyRows(rows:MonthlyRow[],movements:DatedMovement[],today:string,includeFuture:boolean,walletIds:ReadonlySet<string>):MonthlyRow[]{
+ const futureByKey=new Map<string,{income:number;expense:number}>();
+ if(!includeFuture)for(const m of movements){
+  if(m.occurred_on<=today||m.transfer_id||!walletIds.has(m.wallet_id))continue;
+  const key=m.wallet_id+'|'+m.occurred_on.slice(0,7);
+  const amounts=futureByKey.get(key)||{income:0,expense:0};
+  amounts[m.kind]+=Number(m.amount);
+  futureByKey.set(key,amounts);
+ }
+ return rows.filter(r=>walletIds.has(r.wallet_id)).map(r=>{
+  const future=futureByKey.get(r.wallet_id+'|'+r.month);
+  return { ...r,income:Number(r.income)-(future?.income||0),expense:Number(r.expense)-(future?.expense||0)};
+ });
+}
