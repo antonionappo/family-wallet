@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const js=ts.transpileModule(readFileSync(new URL('../src/accounting.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const module={exports:{}};
+new Function('module','exports',js)(module,module.exports);
+const {pendingRecurringAmount,monthlyAmounts}=module.exports;
+const wallets=new Set(['wallet-a']);
+const recurring=[{id:'salary',wallet_id:'wallet-a',kind:'income',amount:2000,next_due_on:'2026-11-10'},{id:'rent',wallet_id:'wallet-a',kind:'expense',amount:700,next_due_on:'2026-11-05'},{id:'other',wallet_id:'wallet-b',kind:'income',amount:900,next_due_on:'2026-11-10'}];
+const rows=[{wallet_id:'wallet-a',month:'2026-11',income:300,expense:50}];
+test('current month includes only accessible pending recurring transactions',()=>{assert.deepEqual(monthlyAmounts(rows,recurring,[],'2026-11','2026-11-01',wallets,true),{income:2300,expense:750})});
+test('toggle off excludes all unconfirmed recurring amounts',()=>{assert.deepEqual(monthlyAmounts(rows,recurring,[],'2026-11','2026-11-01',wallets,false),{income:300,expense:50})});
+test('confirmation does not double-count recurring income',()=>{const recorded=[{recurring_id:'salary',occurred_on:'2026-11-10'}];const updated=[{wallet_id:'wallet-a',month:'2026-11',income:2300,expense:50}];assert.deepEqual(monthlyAmounts(updated,recurring,recorded,'2026-11','2026-11-01',wallets,true),{income:2300,expense:750})});
+test('recurring not included in past or future months',()=>{assert.deepEqual(monthlyAmounts(rows,recurring,[],'2026-10','2026-11-01',wallets,true),{income:0,expense:0});assert.equal(pendingRecurringAmount(recurring,[],'2026-12','income',wallets,true),0)});
+test('same-day pending recurring is included and wallet scope is enforced',()=>{const sameDay=[{...recurring[0],next_due_on:'2026-11-01'}];assert.equal(pendingRecurringAmount(sameDay,[],'2026-11','income',wallets,true),2000);assert.equal(pendingRecurringAmount(sameDay,[],'2026-11','income',new Set(),true),0)});
