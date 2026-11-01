@@ -5,7 +5,7 @@ import ts from 'typescript';
 const js=ts.transpileModule(readFileSync(new URL('../src/accounting.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const module={exports:{}};
 new Function('module','exports',js)(module,module.exports);
-const {pendingRecurringAmount,monthlyAmounts,reconcileMonthlyRows,reconcileWalletBalances}=module.exports;
+const {pendingRecurringAmount,monthlyAmounts,reconcileMonthlyRows,reconcileWalletBalances,buildSixMonthForecast}=module.exports;
 const wallets=new Set(['wallet-a']);
 const recurring=[{id:'salary',wallet_id:'wallet-a',kind:'income',amount:2000,next_due_on:'2026-11-10'},{id:'rent',wallet_id:'wallet-a',kind:'expense',amount:700,next_due_on:'2026-11-05'},{id:'other',wallet_id:'wallet-b',kind:'income',amount:900,next_due_on:'2026-11-10'}];
 const rows=[{wallet_id:'wallet-a',month:'2026-11',income:300,expense:50}];
@@ -38,4 +38,14 @@ test('posted and booked wallet balances reconcile across two wallets',()=>{
 });
 test('wallet balances default to opening amounts without movements',()=>{
  assert.deepEqual(reconcileWalletBalances([{id:'empty',opening_balance:55}],[],[]),[{wallet_id:'empty',posted:55,booked:55}]);
+});
+
+test('forecast accumulates future cashflows across months and detects negative balance',()=>{
+ const f=buildSixMonthForecast('2026-11-01',100,[{date:'2026-11-05',kind:'expense',amount:150},{date:'2026-12-10',kind:'income',amount:200},{date:'2026-11-01',kind:'income',amount:999}]);
+ assert.deepEqual(f.slice(0,2).map(x=>({month:x.month,balance:x.balance,negative:x.negative})),[{month:'2026-11',balance:-50,negative:true},{month:'2026-12',balance:150,negative:false}]);
+ assert.equal(f.length,6);
+});
+test('forecast correctly crosses year boundaries and ignores dates after six months',()=>{
+ const f=buildSixMonthForecast('2026-12-31',50,[{date:'2027-01-01',kind:'expense',amount:60},{date:'2027-07-01',kind:'income',amount:1000}]);
+ assert.equal(f[0].month,'2026-12');assert.equal(f[1].month,'2027-01');assert.equal(f[1].balance,-10);assert.equal(f[5].balance,-10);
 });
