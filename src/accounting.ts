@@ -26,3 +26,10 @@ export function reconcileMonthlyRows(rows:MonthlyRow[],movements:DatedMovement[]
   return { ...r,income:Number(r.income)-(future?.income||0),expense:Number(r.expense)-(future?.expense||0)};
  });
 }
+
+export type WalletBalanceRow={id:string;opening_balance:number};
+export function reconcileWalletBalances(wallets:WalletBalanceRow[],totals:{wallet_id:string;net_movements:number}[],future:{wallet_id:string;future_net:number}[]){
+ const net=new Map(totals.map(x=>[x.wallet_id,Number(x.net_movements)]));
+ const scheduled=new Map(future.map(x=>[x.wallet_id,Number(x.future_net)]));
+ return wallets.map(w=>({wallet_id:w.id,posted:Number(w.opening_balance)+(net.get(w.id)||0)-(scheduled.get(w.id)||0),booked:Number(w.opening_balance)+(net.get(w.id)||0)}));
+}
