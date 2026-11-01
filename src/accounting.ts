@@ -33,3 +33,18 @@ export function reconcileWalletBalances(wallets:WalletBalanceRow[],totals:{walle
  const scheduled=new Map(future.map(x=>[x.wallet_id,Number(x.future_net)]));
  return wallets.map(w=>({wallet_id:w.id,posted:Number(w.opening_balance)+(net.get(w.id)||0)-(scheduled.get(w.id)||0),booked:Number(w.opening_balance)+(net.get(w.id)||0)}));
 }
+
+export type ForecastEntry={date:string;kind:'income'|'expense';amount:number};
+export function buildSixMonthForecast(today:string,openingBalance:number,entries:ForecastEntry[]){
+ const [y,m]=today.split('-').map(Number);
+ let running=openingBalance;
+ return Array.from({length:6},(_,i)=>{
+  const start=new Date(Date.UTC(y,m-1+i,1)).toISOString().slice(0,10);
+  const end=new Date(Date.UTC(y,m+i,0)).toISOString().slice(0,10);
+  const current=entries.filter(e=>e.date>today&&e.date>=start&&e.date<=end);
+  const income=current.filter(e=>e.kind==='income').reduce((s,e)=>s+Number(e.amount),0);
+  const expense=current.filter(e=>e.kind==='expense').reduce((s,e)=>s+Number(e.amount),0);
+  running+=income-expense;
+  return {month:start.slice(0,7),end,income,expense,balance:running,negative:running<0};
+ });
+}
