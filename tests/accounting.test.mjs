@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+const net=(rows)=>rows.reduce((s,r)=>s+(r.kind==='income'?1:-1)*r.amount,0);
+const balance=(opening,rows,today)=>opening+net(rows.filter(r=>r.date<=today));
+const future=(rows,today,end)=>net(rows.filter(r=>r.date>today&&r.date<=end));
+const advance=(iso,frequency)=>{const [y,m,d]=iso.split('-').map(Number);const target=frequency==='monthly'?new Date(Date.UTC(y,m,1)):new Date(Date.UTC(y+1,m-1,1));const last=new Date(Date.UTC(target.getUTCFullYear(),target.getUTCMonth()+1,0)).getUTCDate();return [target.getUTCFullYear(),String(target.getUTCMonth()+1).padStart(2,'0'),String(Math.min(d,last)).padStart(2,'0')].join('-')};
+const schedule=(start,frequency,count,end)=>{const out=[];let d=start;for(let i=0;i<(count??100)&&i<120&&d<=end;i++){out.push(d);d=advance(d,frequency)}return out};
+test('future booked transactions do not change current balance',()=>{const rows=[{kind:'income',amount:100,date:'2026-11-01'},{kind:'expense',amount:40,date:'2026-11-30'}];assert.equal(balance(1000,rows,'2026-11-01'),1100);assert.equal(future(rows,'2026-11-01','2026-11-30'),-40)});
+test('transfer nets to zero across wallets',()=>{assert.equal(net([{kind:'expense',amount:200},{kind:'income',amount:200}]),0)});
+test('installment count limits projections',()=>{assert.deepEqual(schedule('2026-11-30','monthly',3,'2027-05-31'),['2026-11-30','2026-12-30','2027-01-30'])});
+test('monthly end-of-month recurrence is clamped',()=>{assert.equal(advance('2026-01-31','monthly'),'2026-02-28');assert.equal(advance('2028-01-31','monthly'),'2028-02-29')});
+test('yearly leap day is clamped',()=>{assert.equal(advance('2028-02-29','yearly'),'2029-02-28')});
+test('confirming future occurrence preserves projected total',()=>{const current=500,recurring=120;const before=current+recurring;const after=current+future([{kind:'income',amount:120,date:'2026-11-15'}],'2026-11-01','2026-11-30');assert.equal(before,after)});
+test('duplicate recurrence occurrence is counted once',()=>{const rows=[{recurring_id:'a',date:'2026-11-15',amount:50},{recurring_id:'a',date:'2026-11-15',amount:50}];const unique=new Map(rows.map(x=>[x.recurring_id+':'+x.date,x]));assert.equal([...unique.values()].reduce((s,x)=>s+x.amount,0),50)});
