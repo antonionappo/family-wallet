@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Family Wallet",
+  "short_name": "Family Wallet",
+  "description": "Gestione dei portafogli e delle spese familiari",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f766e",
+  "lang": "it",
+  "icons": [
+    {
+      "src": "/wallet-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
