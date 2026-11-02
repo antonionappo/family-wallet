@@ -65,3 +65,5 @@ test('transaction date validation rejects impossible dates',()=>{
  assert.equal(validISODate('2026-11-02'),true);
  for(const v of ['2026-02-30','2026-13-01','2026-11-2','2026-00-12'])assert.equal(validISODate(v),false);
 });
+
+test('stopped recurring transactions are excluded from pending accounting',()=>{const stopped=[{...recurring[0],remaining_count:0}];assert.equal(pendingRecurringAmount(stopped,[],'2026-11','income',wallets,true),0);assert.equal(monthlyAmounts(rows,stopped,[],'2026-11','2026-11-01',wallets,true).income,300);});
