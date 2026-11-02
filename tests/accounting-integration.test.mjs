@@ -49,3 +49,19 @@ test('forecast correctly crosses year boundaries and ignores dates after six mon
  const f=buildSixMonthForecast('2026-12-31',50,[{date:'2027-01-01',kind:'expense',amount:60},{date:'2027-07-01',kind:'income',amount:1000}]);
  assert.equal(f[0].month,'2026-12');assert.equal(f[1].month,'2027-01');assert.equal(f[1].balance,-10);assert.equal(f[5].balance,-10);
 });
+
+const {isPotentialDuplicate,validPositiveAmount,validISODate}=module.exports;
+test('duplicate detection ignores case and surrounding spaces but respects author and category',()=>{
+ const rows=[{description:'  Supermercato ',category:'Spesa',created_by:'u1'}];
+ assert.equal(isPotentialDuplicate(rows,'SUPERMERCATO','Spesa','u1'),true);
+ assert.equal(isPotentialDuplicate(rows,'SUPERMERCATO','Casa','u1'),false);
+ assert.equal(isPotentialDuplicate(rows,'SUPERMERCATO','Spesa','u2'),false);
+});
+test('transaction amount validation rejects zero, negative, empty and nonfinite amounts',()=>{
+ for(const v of ['',' ','0','-2','NaN','Infinity','abc'])assert.equal(validPositiveAmount(v),false);
+ for(const v of ['0.01','12','19.5'])assert.equal(validPositiveAmount(v),true);
+});
+test('transaction date validation rejects impossible dates',()=>{
+ assert.equal(validISODate('2026-11-02'),true);
+ for(const v of ['2026-02-30','2026-13-01','2026-11-2','2026-00-12'])assert.equal(validISODate(v),false);
+});
