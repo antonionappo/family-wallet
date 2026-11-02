@@ -48,3 +48,11 @@ export function buildSixMonthForecast(today:string,openingBalance:number,entries
   return {month:start.slice(0,7),end,income,expense,balance:running,negative:running<0};
  });
 }
+
+export type DuplicateCandidate={description:string;category:string;created_by:string};
+export function isPotentialDuplicate(candidates:DuplicateCandidate[],description:string,category:string,creatorId:string):boolean{
+ const normalized=description.trim().normalize('NFKC').toLocaleLowerCase();
+ return candidates.some(x=>x.created_by===creatorId&&x.category===category&&x.description.trim().normalize('NFKC').toLocaleLowerCase()===normalized);
+}
+export function validPositiveAmount(raw:string):boolean{return raw.trim()!==''&&Number.isFinite(Number(raw))&&Number(raw)>0;}
+export function validISODate(raw:string):boolean{return /^\d{4}-\d{2}-\d{2}$/.test(raw)&&!Number.isNaN(Date.parse(raw))&&new Date(raw).toISOString().slice(0,10)===raw;}
