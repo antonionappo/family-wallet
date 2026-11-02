@@ -14,3 +14,5 @@ test('already booked occurrence excluded from projection',()=>{const paid=[{recu
 test('UI uses history to avoid recurrence duplicate forecast',()=>{assert.match(source,/billHistory\.some\(m=>m\.recurring_id===r\.id&&m\.occurred_on===date\)/)});
 test('UI prevents booking unreceived variable bill',()=>{assert.match(source,/x\.variable_amount&&x\.received_amount===null/)});
 test('UI includes bimonthly option',()=>{assert.match(source,/<option value="bimonthly">Bimestrale<\/option>/)});
+
+test('payment confirmation shows inline feedback and refreshes deleted bills',()=>{assert.match(source,/setPaymentFeedback\('Pagamento registrato correttamente\.'\)/);assert.match(source,/Questa scadenza non esiste più/);assert.match(source,/role="status" className="payment-feedback"/);assert.match(source,/Pagamento non registrato:/);});
