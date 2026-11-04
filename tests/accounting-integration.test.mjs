@@ -70,3 +70,5 @@ test('stopped recurring transactions are excluded from pending accounting',()=>{
 
 const source=readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');
 test('movement date uses a locale-independent ISO date on iOS',()=>{assert.match(source,/const todayISO=\(\)=>/);assert.match(source,/setMovementDate\(todayISO\(\)\)/);assert.doesNotMatch(source,/new Date\(\)\.toLocaleDateString\('en-CA'\)/);});
+
+test('expense form validates ISO date with shared validator',()=>{assert.match(source,/if\(!validISODate\(movementDate\)\)/);assert.doesNotMatch(source,/Date\.parse\(movementDate\)/);});
