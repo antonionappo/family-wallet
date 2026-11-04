@@ -68,4 +68,5 @@ test('transaction date validation rejects impossible dates',()=>{
 
 test('stopped recurring transactions are excluded from pending accounting',()=>{const stopped=[{...recurring[0],remaining_count:0}];assert.equal(pendingRecurringAmount(stopped,[],'2026-11','income',wallets,true),0);assert.equal(monthlyAmounts(rows,stopped,[],'2026-11','2026-11-01',wallets,true).income,300);});
 
+const source=readFileSync(new URL('../src/main.tsx',import.meta.url),'utf8');
 test('movement date uses a locale-independent ISO date on iOS',()=>{assert.match(source,/const todayISO=\(\)=>/);assert.match(source,/setMovementDate\(todayISO\(\)\)/);assert.doesNotMatch(source,/new Date\(\)\.toLocaleDateString\('en-CA'\)/);});
