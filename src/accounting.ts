@@ -55,4 +55,4 @@ export function isPotentialDuplicate(candidates:DuplicateCandidate[],description
  return candidates.some(x=>x.created_by===creatorId&&x.category===category&&x.description.trim().normalize('NFKC').toLocaleLowerCase()===normalized);
 }
 export function validPositiveAmount(raw:string):boolean{return raw.trim()!==''&&Number.isFinite(Number(raw))&&Number(raw)>0;}
-export function validISODate(raw:string):boolean{return /^\d{4}-\d{2}-\d{2}$/.test(raw)&&!Number.isNaN(Date.parse(raw))&&new Date(raw).toISOString().slice(0,10)===raw;}
+export function validISODate(raw:string):boolean{if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return false;const[y,m,d]=raw.split('-').map(Number);if(y<1||m<1||m>12||d<1)return false;const days=new Date(y,m,0).getDate();return d<=days;}
