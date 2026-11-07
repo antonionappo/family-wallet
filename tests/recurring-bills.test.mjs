@@ -16,3 +16,5 @@ test('UI prevents booking unreceived variable bill',()=>{assert.match(source,/x\
 test('UI includes bimonthly option',()=>{assert.match(source,/<option value="bimonthly">Bimestrale<\/option>/)});
 
 test('payment confirmation shows inline feedback and refreshes deleted bills',()=>{assert.match(source,/setPaymentFeedback\('Pagamento registrato correttamente\.'\)/);assert.match(source,/Questa scadenza non esiste più/);assert.match(source,/role="status" className="payment-feedback"/);assert.match(source,/Pagamento non registrato:/);});
+
+test('edit movements and recurring items use a structured mobile form',()=>{assert.match(source,/function editMovement\(x:Movement\)\{setEditError/);assert.match(source,/function editRecurring\(x:Recurring\)\{/);assert.match(source,/className="edit-panel"/);assert.match(source,/type="date" required value=\{editForm\.date\}/);assert.match(source,/type="number" inputMode="decimal" step="0\.01"/);assert.match(source,/async function saveEdit\(e:React\.FormEvent\)/);});
